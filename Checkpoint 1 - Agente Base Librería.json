@@ -1,0 +1,228 @@
+{
+  "name": "Checkpoint 1 - Agente Base Librería",
+  "nodes": [
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "b1000001-0000-0000-0000-000000000001",
+              "name": "fecha_hora",
+              "type": "string",
+              "value": "={{ $now.toFormat('yyyy-MM-dd HH:mm:ss') }}"
+            },
+            {
+              "id": "b1000001-0000-0000-0000-000000000002",
+              "name": "consulta_usuario",
+              "type": "string",
+              "value": "={{ $('Chat Trigger').item.json.chatInput }}"
+            },
+            {
+              "id": "b1000001-0000-0000-0000-000000000003",
+              "name": "respuesta_agente",
+              "type": "string",
+              "value": "={{ $json.output }}"
+            },
+            {
+              "id": "b1000001-0000-0000-0000-000000000004",
+              "name": "estado_ejecucion",
+              "type": "string",
+              "value": "Ejecutado correctamente"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "8fc87396-d927-4e61-abd2-21f8c36d8656",
+      "name": "Preparar Log",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        464,
+        -208
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "p75486777@gmail.com",
+        "subject": "=[Log Agente Librería] Ejecución {{ $json.fecha_hora }}",
+        "message": "=Fecha/Hora: {{ $json.fecha_hora }}\n\nConsulta del usuario:\n{{ $json.consulta_usuario }}\n\nRespuesta del agente:\n{{ $json.respuesta_agente }}\n\nEstado de ejecución: {{ $json.estado_ejecucion }}",
+        "options": {}
+      },
+      "id": "b1e64059-2619-45cb-926a-41ead274b6a0",
+      "name": "Gmail - Observabilidad",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        688,
+        -208
+      ],
+      "webhookId": "31e7151e-7978-46d7-80bd-ba15ac988fa5",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "dmQADReHAd6jcmQC",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        -96,
+        -208
+      ],
+      "id": "4e080dc5-5e31-423e-a5e8-5a4123f73570",
+      "name": "Chat Trigger",
+      "webhookId": "b271e165-3b8a-44a9-b036-ab45b9c6b150"
+    },
+    {
+      "parameters": {
+        "model": "gemma4:31b",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [
+        64,
+        0
+      ],
+      "id": "82fbb170-cb81-4f06-8641-7737b237945b",
+      "name": "Ollama Chat Model",
+      "credentials": {
+        "ollamaApi": {
+          "id": "O55ZzenyfUE4CsFT",
+          "name": "Ollama account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1c9l789f975bYTfyIQXuxOqlhTpfGnrp0kJ_SJqPrVUo",
+          "mode": "list",
+          "cachedResultName": "E1 Catalogo de Libros",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1c9l789f975bYTfyIQXuxOqlhTpfGnrp0kJ_SJqPrVUo/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Inventario",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1c9l789f975bYTfyIQXuxOqlhTpfGnrp0kJ_SJqPrVUo/edit#gid=0"
+        },
+        "filtersUI": {
+          "values": []
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        336,
+        0
+      ],
+      "id": "6aaee686-78b4-460f-bf1f-cbb62906b562",
+      "name": "Catalogo de Libreria Google Sheets",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "bIUW4addI3JRSQCw",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.chatInput }}",
+        "options": {
+          "systemMessage": "# ROL\nEres el asistente virtual oficial de una librería. Atiendes consultas de clientes de forma profesional, clara y precisa.\n\n# ÁMBITO\nPuedes responder sobre:\n- Disponibilidad, precio y stock de libros\n- Información del catálogo (autores, géneros, editoriales, descripciones)\n- Recomendaciones basadas en el catálogo\n- Funcionamiento general de la librería\n\nConsultas fuera de este ámbito (cultura general, etc.) se responden de forma breve, aclarando que tu función principal es la librería.\n\n# OBJETIVO\nAyudar al cliente a encontrar libros y resolver dudas sobre el catálogo usando **únicamente información verificada**.\n\n# REGLAS PRINCIPALES\n- **SIEMPRE** consulta la herramienta de catálogo (Google Sheets) antes de afirmar que un libro existe, tiene stock, precio o cualquier dato concreto.\n- Nunca inventes títulos, autores, precios, stock, editoriales o descripciones.\n- Si la herramienta no devuelve resultados, dilo claramente y ofrece alternativas (otro título, otro criterio de búsqueda, o contactar a un humano).\n- No proceses pagos, reservas, modificaciones de inventario ni prometas plazos de entrega, envíos o promociones no confirmadas.\n\n# USO DE HERRAMIENTAS\nUsa la herramienta del catálogo siempre que el usuario pregunte por:\n- Disponibilidad / stock de un libro\n- Precio\n- Libros de un autor, género o editorial\n- Listados o información concreta del catálogo\n\nNo respondas datos del catálogo sin haber consultado la herramienta primero.\n\n# ESCALAMIENTO\nCuando no encuentres la información solicitada:\n1. Informa honestamente que no está disponible en el catálogo.\n2. Ofrece buscar por otro criterio o título.\n3. Si la consulta lo requiere, sugiere contactar a un encargado humano.",
+          "maxIterations": 2
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        128,
+        -208
+      ],
+      "id": "0e58f459-6918-4e92-ac91-785fc141196a",
+      "name": "AI Agent-Librarian"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Preparar Log": {
+      "main": [
+        [
+          {
+            "node": "Gmail - Observabilidad",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chat Trigger": {
+      "main": [
+        [
+          {
+            "node": "AI Agent-Librarian",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ollama Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent-Librarian",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Catalogo de Libreria Google Sheets": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent-Librarian",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent-Librarian": {
+      "main": [
+        [
+          {
+            "node": "Preparar Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "685b5ce1-1c82-4cb7-bcf3-eaf161693455",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "705132fb471118143dee591829bea5faa4c33c902b2a102519a752ca48c9f349"
+  },
+  "nodeGroups": [],
+  "id": "7wjJW8aZakxDtdRd",
+  "tags": []
+}
