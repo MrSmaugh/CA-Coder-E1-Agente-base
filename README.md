@@ -387,4 +387,3 @@ M6 · Voz
 M11 · Proyecto Final Integrador
 ```
 
-La regla p
